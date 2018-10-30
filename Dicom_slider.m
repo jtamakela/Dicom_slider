@@ -1,12 +1,23 @@
-function test(Stack)
+function [Stack, info] = Dicom_slider;
 
 %Loads DICOMS and shows the stack
 % (C) Janne T.A. Mäkelä 2018
 
+lowerlimit = 3000; %Excludes all the pixels below this. Background needs to be excluded in order to calculate averages correctly without the background
+upperlimit = 4000; %Upper limit can be added
+
+% #IDEA: Klikkaat kohtaa yläpuolelta. saat kuvan kahdesta suunnasta. merkkaat
+% normaalin. 
+
 [Stack, info] = load_dicoms();
+
+Stack(Stack<=lowerlimit) = 0;
+Stack(Stack>=upperlimit) = 0; %Not used
+
 
 koko = size(Stack,3);
 
+fig=figure(100);
 set(fig,'Name','Image','Toolbar','figure');%,...
 %'NumberTitle','off')
 % Create an axes to plot in
