@@ -1,12 +1,14 @@
 function test(Stack)
-%B=rand(576,576,150);
-Stack = Dicoms;
+
+%Loads DICOMS and shows the stack
+% (C) Janne T.A. Mäkelä 2018
+
+[Stack, info] = load_dicoms();
 
 koko = size(Stack,3);
 
-fig=figure(100);
-set(fig,'Name','Image','Toolbar','figure',...
-    'NumberTitle','off')
+set(fig,'Name','Image','Toolbar','figure');%,...
+%'NumberTitle','off')
 % Create an axes to plot in
 axes('Position',[.15 .05 .7 .9]);
 % sliders for epsilon and lambda
@@ -20,13 +22,49 @@ vars=struct('slider1_handle',slider1_handle,'Stack',Stack);
 set(slider1_handle,'Callback',{@slider1_callback,vars});
 plotterfcn(vars)
 % End of main file
+end
 
 % Callback subfunctions to support UI actions
 function slider1_callback(~,~,vars)
-    % Run slider1 which controls value of epsilon
-    plotterfcn(vars)
+% Run slider1 which controls value of epsilon
+plotterfcn(vars)
+end
 
 function plotterfcn(vars)
-    % Plots the image
-    imshow(vars.Stack(:,:,round(get(vars.slider1_handle,'Value'))));
-    title(num2str(get(vars.slider1_handle,'Value')));
+% Plots the image
+%imshow(vars.Stack(:,:,round(get(vars.slider1_handle,'Value'))));
+imagesc(vars.Stack(:,:,round(get(vars.slider1_handle,'Value'))));
+axis equal;
+title(num2str(get(vars.slider1_handle,'Value')));
+
+end
+
+function [Dicoms, info] = load_dicoms()
+
+path = uigetdir; %Choose the folder where the DICOMS are
+
+f = filesep; %Checks what's the file separator for current operating system (windows,unix,linux)
+
+dicomnames = dir([num2str(path) f '*.dcm*']); %Read dicoms.
+disp(['Folder: ', dicomnames(1).folder]); %display folder
+%Dicom info
+info = dicominfo([num2str(path) f dicomnames(1).name]);
+
+h = waitbar(0,'Loading dicoms, please wait...'); %Display waitbar
+
+%Import dicoms
+% % % % % % % % % % % % % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Preallocating to save speed (With 2.08s, without, 2.56s on i5-6267U processor)
+temp = dicomread([num2str(path) f dicomnames(1).name]);
+Dicoms= int16(zeros(size(temp,1),size(temp,2), length(dicomnames)));
+
+Dicoms = Dicoms.*info.RescaleSlope+info.RescaleIntercept; %Converting the pixel values
+
+for i = 1:length(dicomnames)
+    Dicoms(:,:,i)= dicomread([num2str(path) f dicomnames(i).name]);
+    waitbar(i/length(dicomnames));
+end
+close(h);
+
+end
